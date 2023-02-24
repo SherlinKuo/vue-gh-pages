@@ -33,15 +33,13 @@
                 <span v-if="item.is_enabled != 1">未啟用</span>
               </td>
               <td>
-                <button type="button" class="btn btn-primary" v-on:click="showProDetail(item)"
-                  v-bind:disabled="item.is_enabled != 1">查看細節</button>
+                <button type="button" class="btn btn-primary" v-on:click="showProDetail(item)">查看細節</button>
               </td>
               <td class="action-td">
-                <button type="button" class="btn btn-outline-primary" v-on:click="editPro(item)"
-                  v-bind:disabled="item.is_enabled != 1" data-bs-toggle="modal" data-bs-target="#productDetailModal"
-                  data-bs-title="編輯產品">編輯</button>
-                <button type="button" class="btn btn-outline-warning" v-on:click="selectPro = item"
-                  v-bind:disabled="item.is_enabled != 1">刪除</button>
+                <button type="button" class="btn btn-outline-primary" v-on:click="editPro(item)" data-bs-toggle="modal"
+                  data-bs-target="#productDetailModal" data-bs-title="編輯產品">編輯</button>
+                <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#delModal"
+                  v-on:click="selectPro = item">刪除</button>
               </td>
             </tr>
           </tbody>
@@ -123,12 +121,13 @@
               <label for="Unit">單位</label>
             </div>
             <div class="form-floating">
-              <input type="text" class="form-control" id="origin_price" placeholder="請輸入原價"
-                v-model="tmpPro.origin_price" required>
+              <input class="form-control" id="origin_price" placeholder="請輸入原價" type="number" min="0"
+                v-model.number="tmpPro.origin_price" required>
               <label for="origin_price">原價</label>
             </div>
             <div class="form-floating">
-              <input type="text" class="form-control" id="price" placeholder="請輸入售價" v-model="tmpPro.price" required>
+              <input class="form-control" id="price" placeholder="請輸入售價" v-model.number="tmpPro.price" type="number"
+                min="0" required>
               <label for="price">售價</label>
             </div>
             <div class="form-floating">
@@ -141,8 +140,8 @@
               <label for="content">說明內容</label>
             </div>
             <div class="form-check">
-              <input class="form-check-input" type="checkbox" id="is_enabled" v-model="tmpPro.is_enabled"
-                :true-value="1" :false-value="0">
+              <input class="form-check-input" type="checkbox" id="is_enabled" v-model="tmpPro.is_enabled" :true-value="1"
+                :false-value="0">
               <label class="form-check-label" for="is_enabled">
                 是否啟用
               </label>
@@ -154,6 +153,30 @@
           <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @click="savePro()">儲存</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="delModal" tabindex="-1" aria-labelledby="delModal" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h1 class="modal-title fs-5" id="productDetailModalLabel">---</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body row justify-content-around">
+          <h1>是否要刪除 {{ selectPro?.title }} </h1>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal" @click="delProduct()">刪除</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" v-if="isloading">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
   </div>
 </template>
@@ -170,6 +193,7 @@ export default {
       tmpPro: {
         imagesUrl: [],
       },
+      isloading: true,
       url: 'https://vue3-course-api.hexschool.io/v2', // 請加入站點
       path: 'sesame-store', // 請加入個人 API Path
       thSetting: [
@@ -203,7 +227,7 @@ export default {
   },
   methods: {
     showProDetail(item) {
-      // console.log(item);
+      console.log(item);
       this.selectPro = item;
     },
     addImgsUrl() {
@@ -240,13 +264,11 @@ export default {
 
       axios.get(`${this.url}/api/${this.path}/admin/products`)
         .then((res) => {
-          if (res.data.products.length === 0) {
-            this.alert('無商品');
-            this.$router.push({ path: '/', replace: true });
-          }
+          this.isloading = false;
           this.products = res.data.products;
         })
         .catch((err) => {
+          this.isloading = false;
           console.log(err);
         });
     },
@@ -260,6 +282,7 @@ export default {
           this.getData();
         })
         .catch(() => {
+          this.isloading = false;
           this.alert('未登入');
           this.$router.push({ path: '/', replace: true });
         });
@@ -274,6 +297,19 @@ export default {
 
         const modalTitle = productDetailModal.querySelector('.modal-title');
         modalTitle.textContent = `${recipient}`;
+      });
+    },
+    delProduct() {
+      // eslint-disable-next-line camelcase
+      const this_temp = window;
+      const url = `${this.url}/api/${this.path}/admin/product/${this.selectPro.id}`;
+
+      axios.delete(url).then((res) => {
+        console.log(res);
+        this_temp.alert(res.data.message);
+        this.$router.go(0);
+      }).catch((err) => {
+        this_temp.alert(err);
       });
     },
   },
@@ -306,5 +342,18 @@ img {
 
 .form-floating {
   margin-bottom: 8px;
+}
+
+.loading {
+  position: fixed;
+
+  width: 100%;
+  height: 100%;
+  top: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.9;
+  background: white;
 }
 </style>
