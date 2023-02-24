@@ -102,6 +102,7 @@
 
               <label :for="`imagesurl-${index}`">圖片網址</label>
               <img v-bind:src="tmpPro.imagesUrl[index]" v-bind:alt="tmpPro.imagesUrl[index]" class="images m-2">
+              <button type="button" v-if="tmpPro.imagesUrl[index] != ''" class="btn btn-outline-warning px-3" @click="delImgsUrl(index)"><i class="bi bi-trash"></i></button>
             </div>
             <button type="button" class="btn btn-outline-primary" @click="addImgsUrl()">新增圖片</button>
           </div>
@@ -231,7 +232,10 @@ export default {
       this.selectPro = item;
     },
     addImgsUrl() {
-      if (this.tmpPro.imagesUrl[this.tmpPro.imagesUrl.length - 1] !== '') {
+      console.log(this.tmpPro);
+      if (!this.tmpPro.imagesUrl) {
+        this.tmpPro.imagesUrl = [''];
+      } else if (this.tmpPro.imagesUrl[this.tmpPro.imagesUrl.length - 1] !== '') {
         this.tmpPro.imagesUrl.push('');
       }
     },
@@ -250,7 +254,7 @@ export default {
       console.log(this.tmpPro);
       if (this.tmpPro.id) {
         axios.put(`${this.url}/api/${this.path}/admin/product/${this.tmpPro.id}`, { data: this.tmpPro }).then(() => {
-          this.$router.go(0);
+          // this.$router.go(0);
         });
       } else {
         axios.post(`${this.url}/api/${this.path}/admin/product`, { data: this.tmpPro }).then(() => {
@@ -311,6 +315,14 @@ export default {
       }).catch((err) => {
         this_temp.alert(err);
       });
+    },
+    delImgsUrl(index) {
+      // console.log(index);
+      if (this.tmpPro.imagesUrl.length > 1) {
+        this.tmpPro.imagesUrl.splice(index, 1);
+      } else {
+        this.tmpPro.imagesUrl = [];
+      }
     },
   },
   mounted() {
